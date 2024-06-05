@@ -1,0 +1,5 @@
+output/*
+env/*
+__pycache__
+.DS_Store
+trained_model.pth

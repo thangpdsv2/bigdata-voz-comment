@@ -4,10 +4,20 @@ start-spark
 start-zookeeper
 # start kafka
 start-kafka
+
+
 # Test
 kafka-topics.sh --list --bootstrap-server localhost:9092
+# If topics exist, delete them first
+kafka-topics.sh --bootstrap-server localhost:9092 --delete --topic incoming-order
+# Create topics incoming-order
+kafka-topics.sh --create --topic incoming-order --bootstrap-server localhost:9092
 # Make sure we have topics: 
 incoming-order
+
+# Console incoming order
+kafka-console-producer.sh --broker-list localhost:9092 --topic incoming-order
+
 
 # Download model to local source code
 https://drive.google.com/drive/u/3/folders/1tQ2xjhThTElK4G1ybuh4h71hxG1vnXNr

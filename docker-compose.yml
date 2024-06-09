@@ -1,0 +1,76 @@
+version: '3.8'
+
+services:
+  zookeeper:
+    image: wurstmeister/zookeeper:3.4.6
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+    networks:
+      - spark_kafka_network
+
+  kafka:
+    image: wurstmeister/kafka:2.12-2.5.0
+    container_name: kafka
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_CREATE_TOPICS: "incoming-order:1:1"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      - zookeeper
+    networks:
+      - spark_kafka_network
+
+  spark-master:
+    image: bitnami/spark:latest
+    container_name: spark-master
+    environment:
+      - SPARK_MODE=master
+      - SPARK_MASTER_HOST=spark-master
+    ports:
+      - "7077:7077"
+      - "8080:8080"
+    networks:
+      - spark_kafka_network
+
+  spark-worker:
+    image: bitnami/spark:latest
+    container_name: spark-worker
+    environment:
+      - SPARK_MODE=worker
+      - SPARK_MASTER_URL=spark://spark-master:7077
+    ports:
+      - "8081:8081"
+    depends_on:
+      - spark-master
+    networks:
+      - spark_kafka_network
+
+  spark-submit:
+    image: bitnami/spark:latest
+    container_name: spark-submit
+    entrypoint: [ "/bin/bash", "-c", "while true; do sleep 1000; done;" ]
+    depends_on:
+      - spark-master
+      - spark-worker
+    networks:
+      - spark_kafka_network
+
+  setup:
+    image: wurstmeister/kafka:2.12-2.5.0
+    container_name: kafka-setup
+    depends_on:
+      - kafka
+    entrypoint: [ "/bin/bash", "/setup.sh" ]
+    volumes:
+      - ./setup.sh:/setup.sh
+    networks:
+      - spark_kafka_network
+
+networks:
+  spark_kafka_network:
+    driver: bridge

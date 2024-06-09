@@ -51,12 +51,12 @@ services:
       - spark_kafka_network
 
   spark-submit:
-    image: bitnami/spark:latest
+    build: .
     container_name: spark-submit
-    entrypoint: [ "/bin/bash", "-c", "while true; do sleep 1000; done;" ]
     depends_on:
       - spark-master
       - spark-worker
+      - kafka
     networks:
       - spark_kafka_network
 

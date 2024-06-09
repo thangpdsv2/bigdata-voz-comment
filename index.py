@@ -69,11 +69,11 @@ predict_udf = udf(predict, StringType())
 # Initialize Spark Session
 spark = SparkSession.builder \
     .appName("KafkaSparkML") \
-    .config("spark.jars", "/Users/thangpd/Thang/DAIHOC/BIGDATA/Doan/jar/commons-pool2-2.8.0.jar,/Users/thangpd/Thang/DAIHOC/BIGDATA/Doan/jar/kafka-clients-2.6.0.jar,/Users/thangpd/Thang/DAIHOC/BIGDATA/Doan/jar/spark-sql-kafka-0-10_2.12-3.1.2.jar,/Users/thangpd/Thang/DAIHOC/BIGDATA/Doan/jar/spark-token-provider-kafka-0-10_2.12-3.1.2.jar") \
+    .config("spark.jars", "/app/jar/commons-pool2-2.8.0.jar,/app/jar/kafka-clients-2.6.0.jar,/app/jar/spark-sql-kafka-0-10_2.12-3.1.2.jar,/app/jar/spark-token-provider-kafka-0-10_2.12-3.1.2.jar") \
     .getOrCreate()
 
 # Configure Kafka Consumer
-kafka_brokers = "localhost:9092"
+kafka_brokers = "kafka:9092"
 kafka_topic = "incoming-order"
 
 # Read from Kafka
@@ -97,11 +97,17 @@ parsed_df = predicted_df.withColumn("parsed", from_json(col("prediction_result")
 final_df = parsed_df.select(col("value"), col("parsed.prediction"), col("parsed.probabilities"))
 
 # Start the stream and print the output to the console
+# query = final_df \
+#     .writeStream \
+#     .outputMode("append") \
+#     .format("console") \
+#     .option("checkpointLocation", "./output") \
+#     .start()
+
 query = final_df \
     .writeStream \
     .outputMode("append") \
     .format("console") \
-    .option("checkpointLocation", "./output") \
     .start()
 
 query.awaitTermination()

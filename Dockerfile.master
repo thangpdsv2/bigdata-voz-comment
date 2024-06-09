@@ -1,0 +1,11 @@
+FROM bitnami/spark:latest
+
+RUN pip install torch
+RUN pip install transformers
+
+ENV SPARK_MODE=master
+ENV SPARK_MASTER_HOST=spark-master
+
+COPY ./entrypoint.sh /entrypoint.sh
+
+ENTRYPOINT ["/entrypoint.sh"]

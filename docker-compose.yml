@@ -16,6 +16,7 @@ services:
       - "9092:9092"
     environment:
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
       KAFKA_CREATE_TOPICS: "incoming-order:1:1"
     volumes:
@@ -26,7 +27,9 @@ services:
       - spark_kafka_network
 
   spark-master:
-    image: bitnami/spark:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.master
     container_name: spark-master
     environment:
       - SPARK_MODE=master
@@ -36,9 +39,16 @@ services:
       - "8080:8080"
     networks:
       - spark_kafka_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
   spark-worker:
-    image: bitnami/spark:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
     container_name: spark-worker
     environment:
       - SPARK_MODE=worker
@@ -50,6 +60,7 @@ services:
     networks:
       - spark_kafka_network
 
+
   spark-submit:
     build: .
     container_name: spark-submit
@@ -57,6 +68,8 @@ services:
       - spark-master
       - spark-worker
       - kafka
+    volumes:
+      - cache-volume:/tmp/cache
     networks:
       - spark_kafka_network
 
@@ -74,3 +87,6 @@ services:
 networks:
   spark_kafka_network:
     driver: bridge
+
+volumes:
+  cache-volume:

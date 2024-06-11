@@ -39,3 +39,7 @@ urllib3==2.2.1
 Werkzeug==3.0.3
 wrapt==1.16.0
 zipp==3.19.2
+pandas
+kafka-python
+requests
+beautifulsoup4

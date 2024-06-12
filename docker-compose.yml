@@ -73,6 +73,7 @@ services:
     networks:
       - spark_kafka_network
 
+
   setup:
     image: wurstmeister/kafka:2.12-2.5.0
     container_name: kafka-setup
@@ -81,6 +82,16 @@ services:
     entrypoint: [ "/bin/bash", "/setup.sh" ]
     volumes:
       - ./setup.sh:/setup.sh
+    networks:
+      - spark_kafka_network
+      
+  producer:
+    build:
+      context: .
+      dockerfile: Dockerfile.producer
+    container_name: producer
+    depends_on:
+      - kafka
     networks:
       - spark_kafka_network
 

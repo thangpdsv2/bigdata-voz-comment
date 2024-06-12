@@ -25,9 +25,20 @@ def predict(record):
         print(f"Received record: {record}")  # Debugging line
         
         if isinstance(record, str):
-            input_text = record
+            # Try to parse the JSON string to extract the 'comment' field
+            try:
+                input_json = json.loads(record)
+                input_text = input_json.get('comment', '')
+            except json.JSONDecodeError:
+                # If it's not a valid JSON string, use it as is
+                input_text = record
         else:
             raise ValueError("Invalid input format")
+        
+        # Process the input_text as needed for prediction
+        print(f"Extracted comment: {input_text}")
+        if not input_text:
+            raise ValueError("No valid text found for prediction")
         
         print(f"Input text for tokenization: {input_text}")  # Debugging line
         encoded_input = tokenizer.batch_encode_plus(
@@ -71,6 +82,9 @@ spark = SparkSession.builder \
     .appName("KafkaSparkML") \
     .config("spark.jars", "/app/jar/commons-pool2-2.8.0.jar,/app/jar/kafka-clients-2.6.0.jar,/app/jar/spark-sql-kafka-0-10_2.12-3.1.2.jar,/app/jar/spark-token-provider-kafka-0-10_2.12-3.1.2.jar") \
     .getOrCreate()
+
+# Increase the column width and truncate option
+spark.conf.set("spark.sql.debug.maxToStringFields", 1000)
 
 # Configure Kafka Consumer
 kafka_brokers = "kafka:9092"

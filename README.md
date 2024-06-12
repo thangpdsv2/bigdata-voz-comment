@@ -34,8 +34,8 @@ https://drive.google.com/drive/u/3/folders/1tQ2xjhThTElK4G1ybuh4h71hxG1vnXNr
 - docker logs -f spark-submit 
 
 ## Remote to kafka to send test message to sparkML
-- docker exec -it kafka /bin/bash
-- kafka-console-producer.sh --broker-list localhost:9092 --topic incoming-order
+docker exec -it kafka /bin/bash
+kafka-console-producer.sh --broker-list localhost:9092 --topic incoming-order
 
 > send test message and monitor prediction on spark-submit console
 

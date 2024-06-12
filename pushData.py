@@ -37,7 +37,8 @@ async def create_kafka_producer(retries=5, delay=5):
                 bootstrap_servers='kafka:9092',  # Kafka service name within Docker network
                 value_serializer=lambda v: json.dumps(v, ensure_ascii=False).encode('utf-8'),  # Serialize JSON messages
                 request_timeout_ms=60000,  # 60 seconds
-                linger_ms=1000  # 1 second
+                linger_ms=1000,  # 1 second
+                batch_size=16384  # 16KB batch size
             )
             logging.info("Connected to Kafka broker")
             return producer
@@ -60,13 +61,16 @@ async def push_to_kafka(producer):
     df = pd.DataFrame(cleaned_comments, columns=['comment'])
     df.to_csv('/app/data/comments.csv', index=False)
 
-    for comment in cleaned_comments:
-        message = {'comment': comment}
-        logger.info(f"message: {message}")
-        producer.send(topic, value=message)
-        producer.flush()
-        logger.info(f"Sent: {message}")
-        await asyncio.sleep(0)  # Allow other tasks to run
+    batch_size = 4
+    for i in range(0, len(cleaned_comments), batch_size):
+        batch = cleaned_comments[i:i+batch_size]
+        for comment in batch:
+            message = {'comment': comment}
+            logger.info(f"message: {message}")
+            producer.send(topic, value=message)
+            producer.flush()
+            logger.info(f"Sent: {message}")
+        await asyncio.sleep(10)  # Wait for 10 seconds before sending the next batch
 
 async def main():
     producer = await create_kafka_producer()

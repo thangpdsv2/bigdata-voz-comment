@@ -39,3 +39,7 @@ kafka-console-producer.sh --broker-list localhost:9092 --topic incoming-order
 
 > send test message and monitor prediction on spark-submit console
 
+## Verify kafka incoming message
+docker run --rm -it --network=doan_spark_kafka_network confluentinc/cp-kafka:latest kafka-console-consumer --bootstrap-server kafka:9092 --topic incoming-order --from-beginning
+
+

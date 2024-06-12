@@ -1,6 +1,6 @@
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import udf, col, from_json
-from pyspark.sql.types import StringType, FloatType, StructType, StructField, MapType
+from pyspark.sql.types import StringType, FloatType, StructType, StructField
 import torch
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 import json
@@ -81,12 +81,11 @@ predict_udf = udf(predict, StringType())
 spark = SparkSession.builder \
     .appName("KafkaSparkML") \
     .config("spark.jars", "/app/jar/commons-pool2-2.8.0.jar,/app/jar/kafka-clients-2.6.0.jar,/app/jar/spark-sql-kafka-0-10_2.12-3.1.2.jar,/app/jar/spark-token-provider-kafka-0-10_2.12-3.1.2.jar") \
+    .config("spark.streaming.kafka.maxRatePerPartition", 4) \
+    .config("spark.streaming.backpressure.enabled", "true") \
     .getOrCreate()
 
-# Increase the column width and truncate option
-spark.conf.set("spark.sql.debug.maxToStringFields", 1000)
-
-# Configure Kafka Consumer
+# Read from Kafka
 kafka_brokers = "kafka:9092"
 kafka_topic = "incoming-order"
 
@@ -110,18 +109,13 @@ parsed_df = predicted_df.withColumn("parsed", from_json(col("prediction_result")
 # Extract fields from parsed JSON
 final_df = parsed_df.select(col("value"), col("parsed.prediction"), col("parsed.probabilities"))
 
-# Start the stream and print the output to the console
-# query = final_df \
-#     .writeStream \
-#     .outputMode("append") \
-#     .format("console") \
-#     .option("checkpointLocation", "./output") \
-#     .start()
-
+# Write the stream to a JSON file
 query = final_df \
     .writeStream \
     .outputMode("append") \
     .format("console") \
+    .option("path", "/tmp/output/json") \
+    .option("checkpointLocation", "/tmp/kafka-spark-checkpoint") \
     .start()
 
 query.awaitTermination()
